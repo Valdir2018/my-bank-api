@@ -18,30 +18,30 @@ const checkBalance = async (req, res) => {
       } 
 };
 
-// endPoint para depositar
+// EndPoint 4 => método para depositar
 const deposit = async (req, res) => {
-    const agencia = req.params.agencia;
-    const conta = req.params.conta;
-    const newDeposit = req.params.depvalue;
+    const account = req.body;
 
     try {
-        const accounts = await Account.find({ agencia, conta });
-        console.log(typeof accounts);
+
+        let newDeposit = await getAccount(account);
+        newDeposit.balance += account.balance;
+        /**
+         * crio uma nova instância  de account
+         */
+        newDeposit = new Account(newDeposit);
+        // Salvo o valor no Banco de Dados
+        await newDeposit.save();
+        // retorno o saldo atualizado    
+        res.send(newDeposit);
     
-        accounts.balance += newDeposit;
-    
-        accounts = new Account(accounts);
-    
-        await accounts.save();
-    
-        
-    } catch(err) {
-        res.status(500).send("Não foi possivel finalizar seu depósito");
+    } catch(error) {
+        res.status(500).send("Erro ao depositar " + error);
     }
 
 };
 
-// consultar saldo da conta => questao 6
+// // EndPoint 5 =>  consultar saldo da conta => questao 6
 const getBalance =  async (req, res) => {
     const agencia  = req.params.agencia;
     const conta    = req.params.conta;
@@ -52,7 +52,6 @@ const getBalance =  async (req, res) => {
         if (!account) {
             throw new Error("Conta inválida");
         } else {
-
             account.map(conta => {
               console.log(" Balance: ", conta.balance);
             });
