@@ -5,7 +5,6 @@ const Account = accountModel;
 
 const app = express();
 
-
 // // EndPoint 3 => consultar conta e agencia
 const checkBalance = async (req, res) => {
       const agency  = req.params.agencia;
@@ -24,12 +23,9 @@ const deposit = async (req, res) => {
     const account = req.body;
 
     try {
-
         let newDeposit = await getAccount(account);
         newDeposit.balance += account.balance;
-        /**
-         * crio uma nova instância  de account
-         */
+        // crio uma nova instância  de account
         newDeposit = new Account(newDeposit);
         // Salvo o valor no Banco de Dados
         await newDeposit.save();
@@ -42,41 +38,16 @@ const deposit = async (req, res) => {
 
 };
 
-// EndPoint 5 =>  consultar saldo da conta => questao 6
-const getBalance =  async (req, res) => {
-    const agencia  = req.params.agencia;
-    const conta    = req.params.conta;
-
-    try {
-        const account = await Account.find({ agencia, conta });
-
-        if (!account) {
-            throw new Error("Conta inválida");
-        } else {
-            account.map(conta => {
-              console.log(" Balance: ", conta.balance);
-            });
-        }
-
-    } catch(err) {
-       res.status(500).send("Error");
-    }
-
-}
-
 // EndPoint 5 =>  registrar um saque
 const toWithdraw = async (req, res) => {
     const account = req.body;
     try {
         
         let newDrawMoney = await getAccount(account);
-       
         newDrawMoney.balance -= account.balance + 1; // debita valor + taxa de 1
-
         if (newDrawMoney.balance < 0) {
             throw new Error('Saldo Insuficiente !');
         }
-
         newDrawMoney = new Account(newDrawMoney);
         await newDrawMoney.save();
         res.send(newDrawMoney);
@@ -87,6 +58,27 @@ const toWithdraw = async (req, res) => {
     }
 
 };
+
+
+// EndPoint 6 =>  consultar saldo da conta => questao 6
+const getBalance =  async (req, res) => {
+    const agencia  = req.params.agencia;
+    const conta    = req.params.conta;
+
+    try {
+        const account = await Account.find({ agencia, conta });
+        if (!account) {
+            throw new Error("Conta inválida");
+        } else {
+            account.map(conta => {
+              console.log(" Balance: ", conta.balance);
+            });
+        }
+    } catch(err) {
+       res.status(500).send("Error");
+    }
+
+}
 
 /**
  * 
@@ -110,11 +102,25 @@ const getAccount = async(account) => {
             throw new Error(`(${agencia}/${conta}) agencia/conta invalida `);
         }
         return account;
-
     } catch(error) {
       throw Error(error.message);
     }
 }
 
-export default { checkBalance, deposit, getBalance, toWithdraw };
+// EndPoint 7 =>  Exclui uma conta e retorna o total de contas ativas p/ a agencia informada
+const removeAccount = async (req, res) => {
+   const account = req.body;
+   
+   try {
+      let deleteAccount = await getAccount(account );
+      await Account.findByIdAndRemove({ _id: deleteAccount._id });
+      const accountNumber = await Account.find({ agencia: deleteAccount.agencia }).countDocuments();
+      res.send({ totalAccounts: accountNumber });
+     
+   } catch(error) {
+     res.send(error.message);
+   }
+};
+
+export default { checkBalance, deposit, getBalance, toWithdraw, removeAccount };
 
