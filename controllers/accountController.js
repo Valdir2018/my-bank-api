@@ -6,10 +6,11 @@ const Account = accountModel;
 const app = express();
 
 
-// consultar conta e agencia
+// // EndPoint 3 => consultar conta e agencia
 const checkBalance = async (req, res) => {
       const agency  = req.params.agencia;
       const account = req.params.conta;
+
       try {
         const accounts = await Account.find({ agencia: agency, conta: account});
         res.send(accounts);
@@ -41,7 +42,7 @@ const deposit = async (req, res) => {
 
 };
 
-// // EndPoint 5 =>  consultar saldo da conta => questao 6
+// EndPoint 5 =>  consultar saldo da conta => questao 6
 const getBalance =  async (req, res) => {
     const agencia  = req.params.agencia;
     const conta    = req.params.conta;
@@ -62,6 +63,30 @@ const getBalance =  async (req, res) => {
     }
 
 }
+
+// EndPoint 5 =>  registrar um saque
+const toWithdraw = async (req, res) => {
+    const account = req.body;
+    try {
+        
+        let newDrawMoney = await getAccount(account);
+       
+        newDrawMoney.balance -= account.balance + 1; // debita valor + taxa de 1
+
+        if (newDrawMoney.balance < 0) {
+            throw new Error('Saldo Insuficiente !');
+        }
+
+        newDrawMoney = new Account(newDrawMoney);
+        await newDrawMoney.save();
+        res.send(newDrawMoney);
+
+    } catch(error) {
+        res.send(error.message);
+        console.log(error.message);
+    }
+
+};
 
 /**
  * 
@@ -91,5 +116,5 @@ const getAccount = async(account) => {
     }
 }
 
-export default { checkBalance, deposit, getBalance };
+export default { checkBalance, deposit, getBalance, toWithdraw };
 
