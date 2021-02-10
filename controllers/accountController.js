@@ -118,9 +118,54 @@ const removeAccount = async (req, res) => {
       res.send({ totalAccounts: accountNumber });
      
    } catch(error) {
-     res.send(error.message);
+      res.send(error.message);
    }
 };
 
-export default { checkBalance, deposit, getBalance, toWithdraw, removeAccount };
+// EndPoint 8 => realizar transferências entre contas.
+const transferBalance = async (req, res) => {
+    const account =  req.body;
+    const transferMoney = account.valor;
+
+    try {
+         let sourceAccount = await getAccount({ conta: account.contaOrigem });
+         let targetAccount = await getAccount({ conta: account.contaDestino });
+
+         // Valida cobrança de taxa para efetuar a transferencia
+         if (sourceAccount.agencia !== targetAccount.agencia ) {
+             sourceAccount.balance -= 8;
+         }
+
+         //Subtrai do saldo da conta origem o valor da transferencia
+         sourceAccount.balance -= transferMoney; 
+
+         // Valida saldo da conta e menor que zero antes de efetuar a transferencia
+         // Se for menor que zero, lança uma exception 
+         if (sourceAccount.balance < 0 ) {
+             throw new Error('Saldo insuficiente para concluir essa transferências !');
+         }
+
+         // Depositar o valor na conta de destino
+         targetAccount.balance += transferMoney;
+         
+         //Salva as alteracoes conta origem
+         sourceAccount = new Account(sourceAccount);
+         await sourceAccount.save();
+         
+         // Salva as alterações na conta de destino
+         targetAccount = new Account(targetAccount);
+         await targetAccount.save();
+
+         res.send(sourceAccount);
+
+        
+    } catch(error) {
+        res.status(500).send('Erro ao finalizar a transação' + error);
+    }
+
+
+    
+};
+
+export default { checkBalance, deposit, getBalance, toWithdraw, removeAccount, transferBalance };
 
